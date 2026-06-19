@@ -1,10 +1,13 @@
 -- Puzzles backend schema (Supabase Postgres).
--- The Netlify Functions use the service-role key and bypass RLS; RLS is enabled
--- with no public policies so the anon key cannot read/write these tables directly.
+--
+-- Tables live in the `public` schema with a `puzzles_` prefix so the edge
+-- function reaches them through PostgREST without exposing a custom schema.
+-- RLS is enabled with no policies: the anon/publishable key can't read or write
+-- them, while the Edge Function uses the service-role key and bypasses RLS.
 
 create extension if not exists "pgcrypto";
 
-create table if not exists users (
+create table if not exists public.puzzles_users (
   id uuid primary key default gen_random_uuid(),
   device_id text unique not null,
   name text not null default 'Player',
@@ -13,9 +16,9 @@ create table if not exists users (
   created_at timestamptz not null default now()
 );
 
-create table if not exists results (
+create table if not exists public.puzzles_results (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references users(id) on delete cascade,
+  user_id uuid not null references public.puzzles_users(id) on delete cascade,
   type text not null check (type in ('sudoku', 'zip')),
   difficulty text not null,
   size int,
@@ -28,9 +31,9 @@ create table if not exists results (
   created_at timestamptz not null default now()
 );
 
-create index if not exists results_board_idx on results (type, difficulty, time_sec);
-create index if not exists results_daily_idx on results (type, difficulty, is_daily, date_iso, time_sec);
-create index if not exists results_user_idx on results (user_id);
+create index if not exists puzzles_results_board_idx on public.puzzles_results (type, difficulty, time_sec);
+create index if not exists puzzles_results_daily_idx on public.puzzles_results (type, difficulty, is_daily, date_iso, time_sec);
+create index if not exists puzzles_results_user_idx on public.puzzles_results (user_id);
 
-alter table users enable row level security;
-alter table results enable row level security;
+alter table public.puzzles_users enable row level security;
+alter table public.puzzles_results enable row level security;

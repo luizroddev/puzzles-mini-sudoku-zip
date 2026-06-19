@@ -16,9 +16,9 @@
  * the client. Reuses the bundled pure core for authoritative validation.
  */
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
-// Pure core is imported from the deployed public bundle (no secrets, same code
-// the client ships). Re-run the deploy after changing the core to refresh it.
-import { validateResult, dailyConfig, todayISO } from 'https://puzzles-mini-sudoku-zip.netlify.app/core-api.js';
+// Pure core imported from the published bundle via jsDelivr, pinned to a commit
+// (same code the client ships; no secrets). Bump the SHA after changing core.
+import { validateResult, dailyConfig, todayISO } from 'https://cdn.jsdelivr.net/gh/luizroddev/puzzles-mini-sudoku-zip@7e65c6fa85f10cdc3a46422b480b8496b9926a27/public/core-api.js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -26,7 +26,6 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 function db(): SupabaseClient {
   return createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { persistSession: false },
-    db: { schema: 'puzzles' },
   });
 }
 
@@ -70,7 +69,7 @@ function bearer(req: Request): string | null {
 async function userFromReq(req: Request): Promise<UserRow | null> {
   const token = bearer(req);
   if (!token) return null;
-  const { data } = await db().from('users').select('*').eq('token', token).maybeSingle();
+  const { data } = await db().from('puzzles_users').select('*').eq('token', token).maybeSingle();
   return (data as UserRow | null) ?? null;
 }
 
@@ -82,14 +81,14 @@ async function handleAuth(req: Request): Promise<Response> {
   if (!deviceId) return json({ error: 'deviceId required' }, 400);
 
   const conn = db();
-  const existing = await conn.from('users').select('*').eq('device_id', deviceId).maybeSingle();
+  const existing = await conn.from('puzzles_users').select('*').eq('device_id', deviceId).maybeSingle();
   if (existing.data) {
     const u = existing.data as UserRow;
     return json({ token: u.token, userId: u.id, name: u.name });
   }
   const token = randomToken();
   const name = `Player ${Math.floor(1000 + Math.random() * 9000)}`;
-  const ins = await conn.from('users').insert({ device_id: deviceId, token, name }).select('*').single();
+  const ins = await conn.from('puzzles_users').insert({ device_id: deviceId, token, name }).select('*').single();
   if (ins.error || !ins.data) return json({ error: 'could not create user' }, 500);
   const u = ins.data as UserRow;
   return json({ token: u.token, userId: u.id, name: u.name });
@@ -101,7 +100,7 @@ async function handleProfile(req: Request): Promise<Response> {
   if (req.method === 'GET') return json({ userId: user.id, name: user.name });
   const body = await req.json().catch(() => ({}));
   const name = safeName(body.name);
-  const { error } = await db().from('users').update({ name }).eq('id', user.id);
+  const { error } = await db().from('puzzles_users').update({ name }).eq('id', user.id);
   return error ? json({ ok: false }, 500) : json({ ok: true, name });
 }
 
@@ -123,7 +122,7 @@ async function handleResult(req: Request): Promise<Response> {
 
   const ref = payload.ref;
   const conn = db();
-  const ins = await conn.from('results').insert({
+  const ins = await conn.from('puzzles_results').insert({
     user_id: user.id,
     type: ref.type,
     difficulty: ref.difficulty,
@@ -138,7 +137,7 @@ async function handleResult(req: Request): Promise<Response> {
   if (ins.error) return json({ error: 'could not store result' }, 500);
 
   let q = conn
-    .from('results')
+    .from('puzzles_results')
     .select('id', { count: 'exact', head: true })
     .eq('type', ref.type)
     .eq('difficulty', ref.difficulty)
@@ -156,8 +155,8 @@ async function handleLeaderboard(req: Request, url: URL): Promise<Response> {
   const me = await userFromReq(req);
 
   let q = db()
-    .from('results')
-    .select('user_id, time_sec, users(name)')
+    .from('puzzles_results')
+    .select('user_id, time_sec, puzzles_users(name)')
     .eq('type', type)
     .eq('difficulty', difficulty)
     .order('time_sec', { ascending: true })
@@ -176,7 +175,7 @@ async function handleLeaderboard(req: Request, url: URL): Promise<Response> {
     .slice(0, 20)
     .map((row, i) => ({
       rank: i + 1,
-      name: row.users?.name ?? 'Player',
+      name: row.puzzles_users?.name ?? 'Player',
       timeSec: row.time_sec,
       isMe: me ? row.user_id === me.id : false,
     }));
@@ -209,18 +208,18 @@ async function handleSync(req: Request): Promise<Response> {
   if (!user) return json({ error: 'unauthorized' }, 401);
   const conn = db();
   if (req.method === 'GET') {
-    const { data } = await conn.from('users').select('sync_state').eq('id', user.id).maybeSingle();
+    const { data } = await conn.from('puzzles_users').select('sync_state').eq('id', user.id).maybeSingle();
     return json({ state: (data as { sync_state?: unknown } | null)?.sync_state ?? null });
   }
   const body = await req.json().catch(() => ({}));
-  const { error } = await conn.from('users').update({ sync_state: body.state ?? null }).eq('id', user.id);
+  const { error } = await conn.from('puzzles_users').update({ sync_state: body.state ?? null }).eq('id', user.id);
   return error ? json({ ok: false }, 500) : json({ ok: true });
 }
 
 async function handleStats(req: Request): Promise<Response> {
   const user = await userFromReq(req);
   if (!user) return json({ error: 'unauthorized' }, 401);
-  const { data } = await db().from('results').select('type, difficulty, time_sec, hints').eq('user_id', user.id);
+  const { data } = await db().from('puzzles_results').select('type, difficulty, time_sec, hints').eq('user_id', user.id);
   const agg: Record<string, { played: number; totalTimeSec: number; hints: number; best: Record<string, number> }> = {
     sudoku: { played: 0, totalTimeSec: 0, hints: 0, best: {} },
     zip: { played: 0, totalTimeSec: 0, hints: 0, best: {} },
