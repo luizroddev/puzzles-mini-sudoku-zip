@@ -1,0 +1,539 @@
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --text: #1a1d23;
+  --text-dim: #5b626e;
+  --border: #d8dde5;
+  --accent: #3b6ef5;
+  --accent-contrast: #ffffff;
+  --good: #1aa260;
+  --good-bg: #d6f3e4;
+  --bad: #e0463e;
+  --bad-bg: #fbdcda;
+  --given: #1a1d23;
+  --entry: #3b6ef5;
+  --cell: #ffffff;
+  --cell-sel: #cfe0ff;
+  --cell-peer: #e8eefc;
+  --cell-same: #dbe7ff;
+  --shadow: 0 6px 24px rgba(20, 25, 40, 0.12);
+  --radius: 14px;
+  --tap: 44px;
+}
+
+[data-theme='dark'] {
+  --bg: #0f1115;
+  --surface: #181b22;
+  --surface-2: #21252e;
+  --text: #eef1f6;
+  --text-dim: #99a1b0;
+  --border: #2c313c;
+  --accent: #5b87ff;
+  --accent-contrast: #0f1115;
+  --good: #34d399;
+  --good-bg: #103a2c;
+  --bad: #f87171;
+  --bad-bg: #3a1717;
+  --given: #eef1f6;
+  --entry: #7aa0ff;
+  --cell: #181b22;
+  --cell-sel: #26334e;
+  --cell-peer: #1c2230;
+  --cell-same: #233048;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+/* Buttons --------------------------------------------------------------- */
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  min-height: var(--tap);
+  cursor: pointer;
+  color: var(--text);
+  background: var(--surface-2);
+  transition: transform 120ms ease, background 120ms ease, opacity 120ms ease;
+}
+.no-motion .btn {
+  transition: none;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+.btn.ghost {
+  background: transparent;
+  border-color: var(--border);
+}
+.btn.block {
+  width: 100%;
+}
+.btn:focus-visible,
+.cell:focus-visible,
+.toolbtn:focus-visible,
+.pad-key:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.toolbtn {
+  appearance: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+.toolbtn:disabled {
+  opacity: 0.4;
+}
+.toolbtn .ic {
+  font-size: 18px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.pill.accent {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Top / bottom bars ----------------------------------------------------- */
+.topbar,
+.bottombar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.topbar .title {
+  font-weight: 700;
+  font-size: 18px;
+}
+.bottombar {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Headings -------------------------------------------------------------- */
+.h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+.h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+.muted {
+  color: var(--text-dim);
+}
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.spacer {
+  flex: 1;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* Sudoku board ---------------------------------------------------------- */
+.board-wrap {
+  display: flex;
+  justify-content: center;
+}
+.sudoku {
+  display: grid;
+  gap: 0;
+  background: var(--border);
+  border: 2px solid var(--text-dim);
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: manipulation;
+  width: min(92vw, 420px);
+  aspect-ratio: 1;
+}
+.cell {
+  background: var(--cell);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(20px, 7vw, 34px);
+  font-weight: 600;
+  color: var(--entry);
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  aspect-ratio: 1;
+}
+.cell.given {
+  color: var(--given);
+  font-weight: 800;
+}
+.cell.sel {
+  background: var(--cell-sel);
+}
+.cell.peer {
+  background: var(--cell-peer);
+}
+.cell.same {
+  background: var(--cell-same);
+}
+.cell.bad {
+  color: var(--bad);
+  background: var(--bad-bg);
+}
+.cell.flash {
+  animation: flashgood 650ms ease;
+}
+.cell .notes {
+  position: absolute;
+  inset: 2px;
+  display: grid;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.cell .notes span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* thicker region borders via box-shadow set inline by JS data attributes */
+.cell.br {
+  border-bottom: 2px solid var(--text-dim);
+}
+.cell.rr {
+  border-right: 2px solid var(--text-dim);
+}
+
+/* Zip board ------------------------------------------------------------- */
+.zip {
+  position: relative;
+  display: grid;
+  gap: 0;
+  width: min(92vw, 420px);
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 2px solid var(--text-dim);
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: none;
+}
+.zcell {
+  position: relative;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  user-select: none;
+}
+.zcell.on {
+  background: var(--cell-same);
+}
+.zcell .cp {
+  width: 64%;
+  height: 64%;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: clamp(13px, 4.5vw, 20px);
+  z-index: 2;
+}
+.zcell .cp.next {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+.zip-path {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.zip-path path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+.wall {
+  position: absolute;
+  background: var(--bad);
+  z-index: 3;
+  border-radius: 2px;
+}
+
+/* Number pad ------------------------------------------------------------ */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), 1fr);
+  gap: 8px;
+}
+.pad-key {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  min-height: 52px;
+  cursor: pointer;
+}
+.pad-key:active {
+  background: var(--surface-2);
+}
+.pad-key.done {
+  opacity: 0.35;
+}
+
+/* Modals ---------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+@media (min-width: 420px) {
+  .modal-backdrop {
+    align-items: center;
+  }
+}
+.modal {
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 420px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.motion .modal {
+  animation: rise 200ms ease;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.stat {
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 14px;
+}
+.stat .v {
+  font-size: 24px;
+  font-weight: 800;
+}
+.stat .k {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.motion .stat {
+  animation: rise 260ms ease both;
+}
+
+/* Animations ------------------------------------------------------------ */
+.shake {
+  animation: shake 220ms ease;
+}
+.no-motion .shake,
+.no-motion .cell.flash,
+.no-motion .modal,
+.no-motion .stat {
+  animation: none;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@keyframes flashgood {
+  0% { background: var(--good-bg); }
+  100% { background: var(--cell); }
+}
+@keyframes rise {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.leader {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.leader.me {
+  color: var(--accent);
+  font-weight: 700;
+}
+.toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.switch {
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  position: relative;
+  cursor: pointer;
+  flex: none;
+}
+.switch.on {
+  background: var(--accent);
+}
+.switch .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 140ms ease;
+}
+.no-motion .switch .knob {
+  transition: none;
+}
+.switch.on .knob {
+  transform: translateX(18px);
+}
+.seg {
+  display: inline-flex;
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.seg button {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+.seg button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.grow {
+  flex: 1;
+}
+.center {
+  text-align: center;
+}
+.tutorial-steps li {
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
