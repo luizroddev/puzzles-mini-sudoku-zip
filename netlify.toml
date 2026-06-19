@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# The live backend runs as a Supabase Edge Function (supabase/functions/puzzles-api).
+# A Netlify-Functions implementation of the same contract lives in
+# server/netlify-functions-reference/ for self-hosting with your own keys.
+
+# SPA fallback — everything that isn't a static asset serves index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

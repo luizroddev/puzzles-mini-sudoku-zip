@@ -6,7 +6,14 @@
 import { storage } from '../state/storage';
 import type { PuzzleRef } from '../core/factory';
 
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api';
+// Public Supabase Edge Function endpoint + publishable (anon) key. Both are safe
+// to ship in the client; the service-role key never leaves the edge runtime.
+const API_BASE =
+  (import.meta.env.VITE_API_BASE as string | undefined) ??
+  'https://egdomhlbvdovefxjwava.supabase.co/functions/v1/puzzles-api';
+const SUPABASE_KEY =
+  (import.meta.env.VITE_SUPABASE_KEY as string | undefined) ??
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnZG9taGxidmRvdmVmeGp3YXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY5OTA3MTUsImV4cCI6MjAyMjU2NjcxNX0.E-w6ucRXa9R8_yF4ihKzwwL3nguMWVmI5yh2WHnF8g0';
 
 const DEVICE_KEY = 'gh_device';
 const AUTH_KEY = 'gh_auth';
@@ -60,6 +67,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
       ...init,
       headers: {
         'content-type': 'application/json',
+        apikey: SUPABASE_KEY,
         ...(auth?.token ? { authorization: `Bearer ${auth.token}` } : {}),
         ...(init?.headers ?? {}),
       },
